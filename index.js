@@ -15,10 +15,19 @@ const height = 500;
 const margin = { top: 70, right: 30, bottom: 15, left: 220 };
 const xAxisLabelOffset = -60;
 const yAxisLabelOffset = 60;
+const initialMousePosition = {x: width/2, y: height/2}
+
+const circleRadius = 5;
 
 const App = () => {
   const innerHeight = height - margin.top - margin.bottom;
   const innerWidth = width - margin.left - margin.right;
+
+  const [mousePosition, setMousePosition] = useState(initialMousePosition);
+  const handleMouseMove = (event) => {
+ 		const { clientX, clientY } = event;
+		setMousePosition({ x: clientX, y: clientY });
+	}
 
   const data = useData();
   const attributes = [
@@ -47,7 +56,6 @@ const App = () => {
     	}
   	}
   };
-
 
   const initialXAttribute = 'Families'
   const [xAttribute, setXAttribute] = useState(initialXAttribute);
@@ -81,11 +89,11 @@ const App = () => {
 
   const colorScale =
     scaleThreshold()
-    	.domain([100,150,200,250,300,350,400,450,500])
+    	.domain([10,100,200,250,300,350,400,450,500])
     	.range(schemeBlues[9]);
 
   return (
-    <>
+  	<>
     <div className="menus-container">
     	<span className="dropdown-label">x</span>
     	<ReactDropdown
@@ -101,7 +109,12 @@ const App = () => {
      	/>
     </div>
     <div className="chart-container">
-    <svg width={width} height={innerHeight}>
+    <svg width={width} height={innerHeight} onMouseMove={handleMouseMove}>
+      <circle
+        cx={mousePosition.x}
+        cy={mousePosition.y}
+        r={circleRadius}
+        />
       <g transform={`translate(${margin.left},${margin.top})`}>
         <AxisBottom
           xScale={xScale}
