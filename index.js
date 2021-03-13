@@ -7,67 +7,78 @@ import { AxisBottom } from './AxisBottom';
 import { AxisLeft } from './AxisLeft';
 import { Marks } from './Marks';
 import { Dropdown } from './Dropdown';
+import { ColorLegend } from './ColorLegend';
+
+
+
+
 
 
 const menuHeight = 40;
 const width = 960;
 const height = 500;
-const margin = { top: 70, right: 30, bottom: 15, left: 220 };
+const margin = { top: 70, right: 200, bottom: 15, left: 220 };
 const xAxisLabelOffset = -60;
 const yAxisLabelOffset = 60;
 const initialMousePosition = {x: width/2, y: height/2}
-
-const circleRadius = 5;
+const circleRadius = 10;
 
 const App = () => {
   const innerHeight = height - margin.top - margin.bottom;
   const innerWidth = width - margin.left - margin.right;
 
+  const [hoveredValue, setHoveredValue] = useState(null);
   const [mousePosition, setMousePosition] = useState(initialMousePosition);
-  const handleMouseMove = (event) => {
+
+  const handleMouseMove = useCallback(event => {
  		const { clientX, clientY } = event;
 		setMousePosition({ x: clientX, y: clientY });
-	}
+	}, [setMousePosition]);
 
-  const data = useData();
+	const data = useData();
   const attributes = [
-    { value: 'City', label: 'City', domainMin: 0 },
-    { value: 'Families', label: 'Families', domainMin: 0  },
-    { value: 'Non_Family_Households', label: 'Non-Family Households', domainMin: 0  },
-    { value: 'Households', label: 'Households', domainMin: 0  },
-    { value: 'Cases', label: 'Cases', domainMin: 1 },
-    { value: 'CaseRate', label: 'Case Rate/100k', domainMin: 1  },
-    { value: 'Deaths', label: 'Deaths', domainMin: 1 },
-    { value: 'DeathRate', label: 'Death Rate/100k', domainMin: 10 }
+    { id: 1, value: 'City', label: 'City', domainMin: 0, yColorScale: [10,100,200,250,300,350,400,450,500] },
+    { id: 2, value: 'Families', label: 'Families', domainMin: 0, yColorScale: [10,100,200,250,300,350,400,450,500]  },
+    { id: 3, value: 'Non_Family_Households', label: 'Non-Family Households', domainMin: 0, yColorScale: [10,100,200,250,300,350,400,450,500]  },
+    { id: 4, value: 'Households', label: 'Households', domainMin: 0, yColorScale: [10,100,200,250,300,350,400,450,500]  },
+    { id: 5, value: 'Cases', label: 'Cases', domainMin: 1, yColorScale: [10,100,200,250,300,350,400,450,500] },
+    { id: 6, value: 'CaseRate', label: 'Case Rate/100k', domainMin: 1, yColorScale: [1, max(data, yValue)]  },
+    { id: 7, value: 'Deaths', label: 'Deaths', domainMin: 1, yColorScale: [10,100,200,250,300,350,400,450,500] },
+    { id: 8, value: 'DeathRate', label: 'Death Rate/100k', domainMin: 10, yColorScale: [10,100,200,250,300,350,400,450,500] }
     ]
 
   const getLabel = value => {
     for(let i = 0; i < attributes.length; i++) {
     if(attributes[i].value === value){
       return attributes[i].label;
-    	}
-  	}
-  };
+    }}};
 
   const getDomainMin = value => {
     for(let i = 0; i < attributes.length; i++) {
     if(attributes[i].value === value){
       return attributes[i].domainMin;
-    	}
-  	}
-  };
+    }}};
+
+  	const getYColorScale = value => {
+    for(let i = 0; i < attributes.length; i++) {
+    if(attributes[i].value === value){
+      return attributes[i].yColorScale;
+    }}};
 
   const initialXAttribute = 'Families'
   const [xAttribute, setXAttribute] = useState(initialXAttribute);
+
   const xValue = d => d[xAttribute];
   const xAxisLabel = getLabel(xAttribute);
 //  const xColorValue = d => d[xAttribute];
 
   const initialYAttribute = 'DeathRate'
   const [yAttribute, setYAttribute] = useState(initialYAttribute);
+
   const yValue = d => d[yAttribute];
   const yDomainMin = getDomainMin(yAttribute);
   const yAxisLabel = getLabel(yAttribute);
+  const yColorScale = getYColorScale(yAttribute);
   const yColorValue = d => d[yAttribute];
 
   if (!data) {
@@ -89,8 +100,15 @@ const App = () => {
 
   const colorScale =
     scaleThreshold()
-    	.domain([10,100,200,250,300,350,400,450,500])
+//    	.domain([10,100,200,250,300,350,400,450,500])
+  		.domain(yColorScale)
     	.range(schemeBlues[9]);
+
+
+//  const colorScale = scaleOrdinal()
+  //	.domain(data.map(colorValue))
+  	//.range(['#000000', '#888888'])
+  	// //'8:16'
 
   return (
   	<>
@@ -98,14 +116,14 @@ const App = () => {
     	<span className="dropdown-label">x</span>
     	<ReactDropdown
      		options={attributes}
-     	 value={xAttribute}
-     	 onChange={({ value }) => setXAttribute(value)}
+     	 	value={xAttribute}
+     	 	onChange={({ value }) => setXAttribute(value)}
     	 />
      <span className="dropdown-label">y</span>
     	<ReactDropdown
      		options={attributes}
-     	 value={yAttribute}
-     	 onChange={({ value }) => setYAttribute(value)}
+     		value={yAttribute}
+     		onChange={({ value }) => setYAttribute(value)}
      	/>
     </div>
     <div className="chart-container">
@@ -138,6 +156,16 @@ const App = () => {
         >
           {xAxisLabel}
         </text>
+        <g transform={`translate(${innerWidth +100})`}>
+        	<ColorLegend
+           	colorScale={colorScale}
+           	yColorValue={yColorValue}
+          	legendTickSpacing={20}
+ 						legendTickSize={5}
+						legendTickTextOffset={20}
+          	circleRadius={circleRadius}
+          />
+        </g>
         <Marks
           data={data}
           xScale={xScale}
@@ -146,7 +174,9 @@ const App = () => {
           yColorValue={yColorValue}
           xValue={xValue}
           yValue={yValue}
+          circleRadius={circleRadius}
           tooltipFormat={xAxisTickFormat}
+          onHover={setHoveredValue}
         />
       </g>
     </svg>
@@ -156,3 +186,4 @@ const App = () => {
 };
 const rootElement = document.getElementById('root');
 ReactDOM.render(<App />, rootElement);
+ 
